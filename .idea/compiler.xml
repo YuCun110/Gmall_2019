@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="Gm_Mocker" />
+        <module name="Gm_Realtime" />
+        <module name="Gm_Publisher" />
+        <module name="dw-chart" />
+        <module name="Gm_Logger" />
+        <module name="Gm_Common" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="Gmall_Common" target="1.8" />
+      <module name="Gmall_Mocker" target="1.8" />
+      <module name="gmcommon" target="1.8" />
+      <module name="gmmocker" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="Gm_Common" options="-parameters" />
+      <module name="Gm_Logger" options="-parameters" />
+      <module name="Gm_Mocker" options="-parameters" />
+      <module name="Gm_Publisher" options="-parameters" />
+      <module name="Gm_Realtime" options="-parameters" />
+    </option>
+  </component>
+</project>

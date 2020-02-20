@@ -1,0 +1,5 @@
+# Project exclude paths
+/dw-chart/target/
+/Gm_Common/target/
+/Gm_Mocker/target/
+/Gm_Realtime/target/
