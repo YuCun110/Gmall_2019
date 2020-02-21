@@ -16,7 +16,7 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
  * @author XiLinShiShan
  * @version 0.0.1
  */
-object RealtimeStartUpApp {
+object DauApp {
 
   //1.创建时间格式化对象
   private val sdf = new SimpleDateFormat("yyyy-MM-dd HH")

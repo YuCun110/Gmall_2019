@@ -14,6 +14,7 @@
         <module>Gm_Logger</module>
         <module>Gm_Realtime</module>
         <module>dw-chart</module>
+        <module>Gm_Canal</module>
     </modules>
 
     <parent>

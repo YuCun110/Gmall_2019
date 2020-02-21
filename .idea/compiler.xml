@@ -10,6 +10,7 @@
         <module name="Gm_Realtime" />
         <module name="Gm_Publisher" />
         <module name="dw-chart" />
+        <module name="Gm_Canal" />
         <module name="Gm_Logger" />
         <module name="Gm_Common" />
       </profile>
@@ -23,6 +24,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="Gm_Canal" options="-parameters" />
       <module name="Gm_Common" options="-parameters" />
       <module name="Gm_Logger" options="-parameters" />
       <module name="Gm_Mocker" options="-parameters" />
