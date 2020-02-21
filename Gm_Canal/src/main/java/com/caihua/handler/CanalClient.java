@@ -73,7 +73,7 @@ public class CanalClient {
         KafkaProducer<String, String> kafkaProducer = MyKafkaUtil.getKafkaProducer("hadoop202:9092,hadoop203:9092,hadoop204:9092");
 
         //2.对来自Order表并且是Insert操作类型的数据，进行操作
-        if("Gmall_Order".equals(GmallConstants.KAFKA_TOPIC_ORDRE) && CanalEntry.EventType.INSERT.equals(eventType)){
+        if("order_info".equals(tableName) && CanalEntry.EventType.INSERT.equals(eventType)){
             //遍历结果集中的行元素数据
             for (CanalEntry.RowData rowData : rowChange.getRowDatasList()) {
                 //① 创建JSON对象，用于存放数据

@@ -3,6 +3,8 @@ package com.caihua.gmall2019.dwpublisher.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.caihua.gmall2019.dwpublisher.service.DauService;
+import com.caihua.gmall2019.dwpublisher.service.GmvService;
+import org.jcodings.util.Hash;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,6 +25,9 @@ public class PublisherController {
     @Autowired
     DauService dauService;
 
+    @Autowired
+    GmvService gmvService;
+
     /**
      * 统计当日日活用户数
      * @param date 当天的日期
@@ -31,8 +36,10 @@ public class PublisherController {
     @GetMapping("realtime-total")
     public String getRealTimeTotal(@RequestParam("date") String date){
 
-        //1.获取当日用户数
+        //1.获取当日累计日活
         int total = dauService.getTotal(date);
+        Double amount = gmvService.getAmount(date);
+
         //2.创建集合存放JSON对象
         ArrayList<Map> arrayList = new ArrayList<>();
 
@@ -48,12 +55,21 @@ public class PublisherController {
         newMidMap.put("name","新增设备");
         newMidMap.put("value",233);
 
-        //4.将封装结果
+        //5.创建Map用于存放新增交易额
+        HashMap<String,Object> gmvAmount = new HashMap<>();
+        gmvAmount.put("id","order_amount");
+        gmvAmount.put("name","新增交易额");
+        gmvAmount.put("value",amount);
+
+        //6.将封装结果
         arrayList.add(dauMap);
         arrayList.add(newMidMap);
+        arrayList.add(gmvAmount);
+
         String s = JSON.toJSONString(arrayList);
         System.out.println(s);
-        //5.返回JSON
+
+        //7.返回JSON
         return JSON.toJSONString(arrayList);
     }
 
@@ -81,17 +97,26 @@ public class PublisherController {
         instance.add(Calendar.DAY_OF_MONTH,-1);
         String yesterday = sdf.format(new Date(instance.getTimeInMillis()));
 
-        //4.接收分时统计结果
-        Map todayHourTotal = dauService.getHourTotal(date);
-        Map yesterdayHourTotal = dauService.getHourTotal(yesterday);
+        //4.定义容器
+        Map todayHourTotal = null;
+        Map yesterdayHourTotal = null;
 
+        //5.接收分时统计结果
+        if("dau".equals(id)){
+            //① 分时统计日活
+            todayHourTotal = dauService.getHourTotal(date);
+            yesterdayHourTotal = dauService.getHourTotal(yesterday);
+        }else if("order_amount".equals(id)){
+            //② 分时统计交易额
+            todayHourTotal = gmvService.getHourAmount(date);
+            yesterdayHourTotal = gmvService.getHourAmount(yesterday);
+        }
 
-        //5.将分时统计后的结果放入结果容器中
-
+        //6.将分时统计后的结果放入结果容器中
         resultMap.put("yesterday", (HashMap<String, Long>) yesterdayHourTotal);
         resultMap.put("today", (HashMap<String, Long>) todayHourTotal);
 
-        //6.返回JSON字符串
+        //7.返回JSON字符串
         return JSONObject.toJSONString(resultMap);
     }
 }
