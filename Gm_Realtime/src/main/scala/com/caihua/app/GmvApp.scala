@@ -13,7 +13,7 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
  * @version 0.0.1
  * 统计交易额
  */
-object GMVApp {
+object GmvApp {
   def main(args: Array[String]): Unit = {
     //1.创建SparkConf
     val conf: SparkConf = new SparkConf().setAppName("GMVApp").setMaster("local[*]")

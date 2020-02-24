@@ -15,6 +15,7 @@
         <module>Gm_Realtime</module>
         <module>dw-chart</module>
         <module>Gm_Canal</module>
+        <module>Gm_ES</module>
     </modules>
 
     <parent>
