@@ -7,10 +7,11 @@ import java.util.Date
 import com.alibaba.fastjson.JSON
 import com.caihua.bean.{CouponAlertLog, EventLog}
 import com.caihua.constants.GmallConstants
-import com.caihua.utils.MyKafkaUtil
+import com.caihua.utils.{MyEsUtil, MyKafkaUtil}
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming.dstream.{DStream, InputDStream}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
+
 import scala.util.control.Breaks._
 
 /**
@@ -84,10 +85,22 @@ object AlterApp {
       }
     }
 
-    //7.判断是否满足预警条件，并将结果存入ES中
-    filterDStream.filter(_._1).print()
+    //7.判断是否满足预警条件，并将转换结果的结构：-> (mid+dt,coupAlterLog)
+    val alterDStream: DStream[(String, CouponAlertLog)] = filterDStream.filter(_._1).map {
+      case (isAlter, couponAlertLog) => {
+        //获取时间戳，转换为分钟
+        val min:Long = couponAlertLog.ts/1000/60
+        (couponAlertLog.mid + "-" + min.toString, couponAlertLog)
+      }
+    }
 
-
+    //8.将预警日志存储到ES中
+    alterDStream.foreachRDD(rdd => {
+      //遍历每个分区，批量写入ES中
+      rdd.foreachPartition(iter => {
+        MyEsUtil.insertES(GmallConstants.ES_INDEX_NAME,iter.toList)
+      })
+    })
 
     //开始任务
     ssc.start()

@@ -13,7 +13,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * @author XiLinShiShan
@@ -72,22 +71,42 @@ public class CanalClient {
         //1.创建KafkaProducer
         KafkaProducer<String, String> kafkaProducer = MyKafkaUtil.getKafkaProducer("hadoop202:9092,hadoop203:9092,hadoop204:9092");
 
-        //2.对来自Order表并且是Insert操作类型的数据，进行操作
+        //2.选择不同的Topic主题
+        String topic = "";
         if("order_info".equals(tableName) && CanalEntry.EventType.INSERT.equals(eventType)){
-            //遍历结果集中的行元素数据
-            for (CanalEntry.RowData rowData : rowChange.getRowDatasList()) {
-                //① 创建JSON对象，用于存放数据
-                JSONObject jsonObject = new JSONObject();
-                //② 存放表信息
-                jsonObject.put("tableName",tableName);
-                //③ 读取行数据中的字段
-                for (CanalEntry.Column column : rowData.getAfterColumnsList()) {
-                    //存入JSON中
-                    jsonObject.put(column.getName(),column.getValue());
-                }
-                //④ 将JSON字符串发送至Kafka集群中
-                kafkaProducer.send(new ProducerRecord<>(GmallConstants.KAFKA_TOPIC_ORDRE,jsonObject.toString()));
+            //topic = GmallConstants.KAFKA_TOPIC_ORDER;
+            saveToKafka(rowChange,kafkaProducer,GmallConstants.KAFKA_TOPIC_ORDER);
+        }else if("order_detail".equals(tableName) && CanalEntry.EventType.INSERT.equals(eventType)){
+            //topic = GmallConstants.KAFKA_TOPIC_ORDER_DETAIL;
+            saveToKafka(rowChange,kafkaProducer,GmallConstants.KAFKA_TOPIC_ORDER_DETAIL);
+        }else if("user_info".equals(tableName) && (CanalEntry.EventType.INSERT.equals(eventType) || CanalEntry.EventType.UPDATE.equals(eventType))){
+            //topic = GmallConstants.KAFKA_TOPIC_USER_INFO;
+            saveToKafka(rowChange,kafkaProducer,GmallConstants.KAFKA_TOPIC_USER_INFO);
+        }
+
+        //3.将数据存入Kafka中
+        //saveToKafka(rowChange,kafkaProducer,topic);
+    }
+
+    /**
+     * 遍历结果集中的行元素数据，并将数据写入Kafka集群
+     * @param rowChange Canal读取的数据集
+     * @param kafkaProducer Kafka生产者对象
+     * @param topic Kafka的主题
+     */
+    private static void saveToKafka(CanalEntry.RowChange rowChange, KafkaProducer<String, String> kafkaProducer, String topic) {
+        for (CanalEntry.RowData rowData : rowChange.getRowDatasList()) {
+            //① 创建JSON对象，用于存放数据
+            JSONObject jsonObject = new JSONObject();
+            //② 读取行数据中的字段
+            for (CanalEntry.Column column : rowData.getAfterColumnsList()) {
+                //存入JSON中
+                jsonObject.put(column.getName(),column.getValue());
             }
+            System.out.println(jsonObject.toString());
+
+            //③ 将JSON字符串发送至Kafka集群中
+            kafkaProducer.send(new ProducerRecord<>(topic,jsonObject.toString()));
         }
     }
 }

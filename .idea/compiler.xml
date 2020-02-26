@@ -6,11 +6,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="Gm_Mocker" />
+        <module name="dw-chart" />
         <module name="Gm_Realtime" />
         <module name="Gm_ES" />
         <module name="Gm_Publisher" />
-        <module name="dw-chart" />
+        <module name="Gm_Mocker" />
         <module name="Gm_Canal" />
         <module name="Gm_Logger" />
         <module name="Gm_Common" />
