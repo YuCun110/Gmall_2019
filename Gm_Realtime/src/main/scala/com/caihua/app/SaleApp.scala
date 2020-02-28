@@ -1,13 +1,11 @@
 package com.caihua.app
 
-import java.text.SimpleDateFormat
 import java.util
-import java.util.Date
 
 import com.alibaba.fastjson.JSON
-import com.caihua.bean.{OrderDetail, OrderInfo, SaleDetail}
+import com.caihua.bean.{OrderDetail, OrderInfo, SaleDetail, UserInfo}
 import com.caihua.constants.GmallConstants
-import com.caihua.utils.{MyKafkaUtil, MyRedisUtil}
+import com.caihua.utils.{MyEsUtil, MyKafkaUtil, MyRedisUtil}
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming.dstream.{DStream, InputDStream}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
@@ -23,6 +21,9 @@ import scala.collection.mutable.ListBuffer
  * @version 0.0.1
  */
 object SaleApp {
+  //1.定义RedisKey
+  val redisKey:String = "Gmall_UserInfo"
+
   def main(args: Array[String]): Unit = {
     //1.创建SparkCon
     val conf: SparkConf = new SparkConf().setAppName("SaleApp").setMaster("local[*]")
@@ -59,7 +60,7 @@ object SaleApp {
     val joinByInfoWithDetailDStream: DStream[(String, (Option[OrderInfo], Option[OrderDetail]))] = orderInfoDStream.fullOuterJoin(orderDetailDStream)
 
     //6.对Join后的结果集进行批量处理
-    val resultJoin01: DStream[SaleDetail] = joinByInfoWithDetailDStream.mapPartitions {
+    val saleDetailDStream: DStream[SaleDetail] = joinByInfoWithDetailDStream.mapPartitions {
       iter => {
         //① 定义集合，存放待批量处理的数据
         val list = new ListBuffer[SaleDetail]()
@@ -134,9 +135,60 @@ object SaleApp {
         list.toIterator
       }
     }
-    resultJoin01.print(100)
 
-    //启动任务
+    //7.将uIDataDStream数据存入Redis中
+    uIDataDStream.foreachRDD(rdd => {
+      rdd.foreachPartition(iter =>{
+        //① 获取Redis连接
+        val jedisClient: Jedis = MyRedisUtil.getJedis()
+        //② 写入Redis
+        iter.foreach{
+          case(_,user) => {
+            //a.将JSON字符串转换为样例类对象
+            val userInfo: UserInfo = JSON.parseObject(user,classOf[UserInfo])
+            //b.定义hashKey
+            val hashKey:String = s"UserId_${userInfo.id}"
+            //c.写入redis
+            jedisClient.hset(redisKey,hashKey,user)
+          }
+        }
+        //③ 关闭连接
+        jedisClient.close()
+      })
+    })
+
+    //8.获取Redis中的user信息，将SaleDetail中的用户信息补全
+    val result: DStream[SaleDetail] = saleDetailDStream.mapPartitions(iter => {
+      //① 获取Redis连接
+      val jedisClient: Jedis = MyRedisUtil.getJedis()
+      //② 遍历元素
+      val details: Iterator[SaleDetail] = iter.map(saleDetail => {
+        //a.定义redis中的hashKey
+        val hashKey: String = s"UserId_${saleDetail.user_id}"
+        //b.查询用户信息
+        val userInfo: String = jedisClient.hget(redisKey, hashKey)
+        //c.补充用户信息
+        saleDetail.mergeUserInfo(JSON.parseObject(userInfo, classOf[UserInfo]))
+        //d.返回
+        saleDetail
+      })
+      //③ 关闭连接
+      jedisClient.close()
+      //④ 返回结果
+      details
+    })
+
+    //9.将统计完成的结果存入ES中
+    result.foreachRDD(rdd => {
+      rdd.foreachPartition(iter => {
+        //① 变换数据类型
+        val tupleIter: Iterator[(String,SaleDetail)] = iter.map(saleDetail => (s"${saleDetail.order_id}-${saleDetail.order_detail_id}",saleDetail))
+        //② 写入ES
+        MyEsUtil.insertES(GmallConstants.ES_INDEX_SALE_DETAIL,tupleIter.toList)
+      })
+    })
+
+    //10.启动任务
     ssc.start()
     //阻塞main线程
     ssc.awaitTermination()

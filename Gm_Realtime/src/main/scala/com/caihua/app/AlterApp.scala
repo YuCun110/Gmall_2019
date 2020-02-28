@@ -98,7 +98,7 @@ object AlterApp {
     alterDStream.foreachRDD(rdd => {
       //遍历每个分区，批量写入ES中
       rdd.foreachPartition(iter => {
-        MyEsUtil.insertES(GmallConstants.ES_INDEX_NAME,iter.toList)
+        MyEsUtil.insertES(GmallConstants.ES_INDEX_COUPON_ALTER,iter.toList)
       })
     })
 

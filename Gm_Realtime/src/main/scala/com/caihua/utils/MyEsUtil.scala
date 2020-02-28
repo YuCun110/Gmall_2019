@@ -54,7 +54,7 @@ object MyEsUtil {
    * @param indexName
    * @param data
    */
-  def insertES(indexName:String,data: List[(String,CouponAlertLog)]): Unit ={
+  def insertES(indexName:String,data: List[(String,Any)]): Unit ={
     //1.判断数据是否为空
     if(data.nonEmpty){
       //① 获取ES客户端对象
@@ -62,9 +62,9 @@ object MyEsUtil {
       //② 创建Bulk对象
       val bulkBuilder: Bulk.Builder = new Bulk.Builder().defaultIndex(indexName).defaultType("_doc")
       //③ 遍历数据集，批量存储
-      for ((id,couponAlertLog) <- data) {
+      for ((id,any) <- data) {
         //a.创建Index对象
-        val indexBuilder = new Index.Builder(couponAlertLog)
+        val indexBuilder = new Index.Builder(any)
         //b.添加Id
         if(id != null){
           indexBuilder.id(id)
@@ -90,10 +90,10 @@ object MyEsUtil {
         //b.打印执行的结果信息
         println("保存" + items.size() + "条数据")
         import scala.collection.JavaConversions._
-        for(item <- items){
-          println(item.error)
-          println(item.errorReason)
-        }
+//        for(item <- items){
+//          println(item.error)
+//          println(item.errorReason)
+//        }
       }
     }
   }
